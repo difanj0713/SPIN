@@ -11,7 +11,7 @@ def main():
     finetuned_model_dict = {
         "distilbert_imdb": "lvwerra/distilbert-imdb",
         "roberta_imdb": "wrmurray/roberta-base-finetuned-imdb",
-        "gpt2_imdb": "lvwerra/gpt2-imdb",
+        "gpt2_imdb": "mnoukhov/gpt2-imdb-sentiment-classifier",
         "gpt2-medium_imdb": "edbeeching/gpt2-medium-imdb",
         "gpt2-large_imdb": "edbeeching/gpt2-large-imdb",
         "gpt2-xl_imdb": "edbeeching/gpt2-xl-imdb",
@@ -92,7 +92,7 @@ def main():
                 dm = DistilBertModel.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
             
             elif args.model_name == "roberta":
-                local_model_dir = f"../Sparsify-then-Classify/model/{args.model_name}"
+                local_model_dir = f"../Sparsify-then-Classify/model/{model_key}"
                 tokenizer = RobertaTokenizer.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
                 dm = RobertaModel.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
             
