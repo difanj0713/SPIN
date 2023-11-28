@@ -1,5 +1,6 @@
 # Sparsify-then-Classify
-Code repository for the paper ***Sparsify-then-Classify*** **: Towards Next-Generation Text Classifier Leveraging Internal Neuron Representations from Large Language Models** by Yilun Liu, Difan Jiao, and Ashton Anderson.
+Code repository for the paper ***Sparsify-then-Classify*** **: Towards Next-Generation Text Classifier Leveraging Internal Neuron Representations from Large Language Models** 
+[[arXiv]](https://arxiv.org/abs/2311.15983) by Yilun Liu, Difan Jiao, and Ashton Anderson.
 
 This repository contains all experimental infrastructure for the paper. 
 
@@ -27,15 +28,13 @@ Our experiments demonstrate that STC not only consistently improves the classifi
 ## Citation
 If you find our code or datasets useful in your research, we would appreciate it if you could cite our paper
 ```TeX
-@article{YourPaper2023,
-  title={Your Paper Title},
-  author={Your Name and Co-Authors},
-  journal={Journal Name},
-  volume={xx},
-  number={xx},
-  pages={xx--xx},
-  year={2023},
-  publisher={Publisher}
+@misc{liu2023sparsifythenclassify,
+      title={Sparsify-then-Classify: From Internal Neurons of Large Language Models To Efficient Text Classifiers}, 
+      author={Yilun Liu and Difan Jiao and Ashton Anderson},
+      year={2023},
+      eprint={2311.15983},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
 }
 ```
 
