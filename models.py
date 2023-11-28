@@ -114,8 +114,10 @@ class Bert:
         self.batch_embedding = batch_embedding
         return batch_id
 
-    def forward(self, batch_id, layer_limit, verbose=0, \
-                output_all_hidden_states=False, output_all_activations=False, output_all_pooled_activations=True):
+    def forward(self, batch_id, layer_limit, verbose=0,
+                output_last_hidden_states=True,
+                output_all_hidden_states=False, output_all_activations=False, 
+                output_all_pooled_hidden_states=True, output_all_pooled_activations=True):
         batch = self.batch_embedding[batch_id]
         hidden_states = batch['hidden_states']
         mask = batch['mask']
@@ -129,16 +131,27 @@ class Bert:
 
         all_hidden_states = () if output_all_hidden_states else None
         all_activations = () if output_all_activations else None
+        all_pooled_hidden_states = () if output_all_pooled_hidden_states else None
         all_pooled_activations = () if output_all_pooled_activations else None
+        
+        with torch.no_grad():
+            h = hidden_states
 
-        h = hidden_states
-
-        for layer in range(layer_limit):
-            tmp_block = self.model.transformer.layer[layer]
-            
+        for layer in range(layer_limit):            
             with torch.no_grad():
+                tmp_block = self.model.transformer.layer[layer]
+
                 if output_all_hidden_states:
                     all_hidden_states += (h,)
+                if output_all_pooled_hidden_states:
+                    first_hs = h[:,0]
+                    hs = h * mask.unsqueeze(-1)
+                    sum_masked = hs.sum(dim=1)
+                    avg_hs = sum_masked / n_tokens.unsqueeze(-1)
+                    hs = hs.masked_fill(mask.unsqueeze(-1) == 0, float('-inf'))
+                    max_hs = hs.max(dim=1)[0]
+                    pooled_hs = torch.stack([first_hs, max_hs, avg_hs], dim=-1)
+                    all_pooled_hidden_states += (pooled_hs,)
 
                 attn = tmp_block.attention
                 sa_output = attn(query=h, key=h, value=h, mask=attention_mask)
@@ -154,40 +167,58 @@ class Bert:
                 if output_all_activations:
                     all_activation += (act,)
                 if output_all_pooled_activations:
+                    first_act = act[:,0]
                     act = act * mask.unsqueeze(-1)
                     sum_masked = act.sum(dim=1)
                     avg_act = sum_masked / n_tokens.unsqueeze(-1)
                     act = act.masked_fill(mask.unsqueeze(-1) == 0, float('-inf'))
                     max_act = act.max(dim=1)[0]
-                    pooled = torch.stack([avg_act, max_act], dim=-1)
-                    all_pooled_activations += (pooled,)
+                    pooled_act = torch.stack([first_act, max_act, avg_act], dim=-1)
+                    all_pooled_activations += (pooled_act,)
+
             if verbose>1:
                 print('Layer ', layer + 1, ' / ', layer_limit, ' Processed.')
         
-        if all_pooled_activations is not None:
-            all_pooled_activations = torch.stack(all_pooled_activations)
+        with torch.no_grad():
+            last_hidden_states = h if output_last_hidden_states else None
+
+            if output_all_hidden_states:
+                all_hidden_states += (h,)
+            if output_all_pooled_hidden_states:
+                first_hs = h[:,0]
+                hs = h * mask.unsqueeze(-1)
+                sum_masked = hs.sum(dim=1)
+                avg_hs = sum_masked / n_tokens.unsqueeze(-1)
+                hs = hs.masked_fill(mask.unsqueeze(-1) == 0, float('-inf'))
+                max_hs = hs.max(dim=1)[0]
+                pooled_hs = torch.stack([first_hs, max_hs, avg_hs], dim=-1)
+                all_pooled_hidden_states += (pooled_hs,)
+
+            if all_pooled_hidden_states is not None:
+                all_pooled_hidden_states = torch.stack(all_pooled_hidden_states)            
+            if all_pooled_activations is not None:
+                all_pooled_activations = torch.stack(all_pooled_activations)
                 
-        return (h, all_hidden_states, all_activations, all_pooled_activations,)
+        return (last_hidden_states, \
+            all_hidden_states, all_activations, \
+            all_pooled_hidden_states, all_pooled_activations,)
     
-    def get_result(self, input_lines, layer_limit=1, verbose=0, \
+    def get_result(self, input_lines, layer_limit=6, verbose=0,
+                output_last_hidden_states=True,
                 output_all_hidden_states=False, output_all_activations=False, 
-                output_all_pooled_activations=True, output_last_hidden_states=False):
+                output_all_pooled_hidden_states=True, output_all_pooled_activations=True):
         if layer_limit > self.n_layer:
-            print('RoBERTa layer limit ', self.n_layer)
+            print('DistilBERT layer limit ', self.n_layer)
             return
         n_batch = self.embedding(input_lines, is_sorted=True)
         
         index = ()       
 
-        if output_all_hidden_states:
-            all_hidden_states = ()
-        if output_all_activations:
-            all_activations = ()
-        if output_all_pooled_activations:
-            all_pooled_activations = ()
-        
-        if output_last_hidden_states:
-            last_hidden_states = ()
+        last_hidden_states = () if output_last_hidden_states else None
+        all_hidden_states = () if output_all_hidden_states else None
+        all_activations = () if output_all_activations else None
+        all_pooled_hidden_states = () if output_all_pooled_hidden_states else None
+        all_pooled_activations = () if output_all_pooled_activations else None
         
         for batch_id in range(n_batch):
             if verbose:
@@ -196,32 +227,38 @@ class Bert:
             batch = self.batch_embedding[batch_id]
             index += tuple(batch['index'].numpy())
             
-            batch_last_hidden_states, batch_all_hidden_states, batch_all_activations, batch_all_pooled_activations = \
+            batch_last_hidden_states, \
+                batch_all_hidden_states, batch_all_activations, \
+                batch_all_pooled_hidden_states, batch_all_pooled_activations = \
                 self.forward(batch_id, layer_limit, verbose,
-                    output_all_hidden_states, output_all_activations, output_all_pooled_activations
+                    output_last_hidden_states,
+                    output_all_hidden_states, output_all_activations, 
+                    output_all_pooled_hidden_states, output_all_pooled_activations
                 )
-
-            if output_all_hidden_states:
-                all_hidden_states += (batch_all_hidden_states + (batch_last_hidden_states,),)
-            if output_all_activations:
-                all_activations += (batch_all_activations,)
-            if output_all_pooled_activations:
-                all_pooled_activations += (batch_all_pooled_activations,)
             
             if output_last_hidden_states:
                 last_hidden_states += (batch_last_hidden_states,)
+            if output_all_hidden_states:
+                all_hidden_states += (batch_all_hidden_states,)
+            if output_all_activations:
+                all_activations += (batch_all_activations,)
+            if output_all_pooled_hidden_states:
+                all_pooled_hidden_states += (batch_all_pooled_hidden_states,)
+            if output_all_pooled_activations:
+                all_pooled_activations += (batch_all_pooled_activations,)
             
         output = (index,)
         #index = torch.cat(index, dim=0)
+        #if output_last_hidden_states:
+        #    output += (last_hidden_states,)
         if output_all_hidden_states:
             output += (all_hidden_states,)
         if output_all_activations:
             output += (all_activations,)
+        if output_all_pooled_hidden_states:
+            output += (torch.cat(all_pooled_hidden_states, dim=1),)
         if output_all_pooled_activations:
             output += (torch.cat(all_pooled_activations, dim=1),)
-        
-        if output_last_hidden_states:
-            output += (last_hidden_states,)
         
         return output
 
@@ -463,19 +500,12 @@ class GPT2:
         
         return output
 
-class GPT2Base(GPT2):
-    def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2-base', batch_size=1000):
+class GPT2(GPT2):
+    def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2', batch_size=1000):
         self.n_positions = 1024
         self.n_layer = 48
         self.batch_size = batch_size
         super().__init__(tokenizer, local_model_dir)
-
-class GPT2XL(GPT2):
-    def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2-xl', batch_size=1000):
-        self.n_positions = 1024
-        self.n_layer = 48
-        self.batch_size = batch_size
-        super().__init__(tokenizer, local_model_dir, batch_size)
 
 class GPT2Medium(GPT2):
     def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2-medium', batch_size=1000):

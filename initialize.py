@@ -16,7 +16,11 @@ def main():
         "gpt2-large_imdb": "edbeeching/gpt2-large-imdb",
         "gpt2-xl_imdb": "edbeeching/gpt2-xl-imdb",
         "distilbert_edos": "lct-rug-2022/edos-2023-baseline-distilbert-base-uncased-label_sexist",
+        "roberta_edos": "lct-rug-2022/edos-2023-baseline-roberta-base-label_sexist",
         "distilbert_sst-2": "distilbert-base-uncased-finetuned-sst-2-english",
+        "roberta_sst-2": "textattack/roberta-base-SST-2",
+        "gpt2_sst-2": "PavanNeerudu/gpt2-finetuned-sst2",
+        "gpt2-medium_sst-2": "michelecafagna26/gpt2-medium-finetuned-sst2-sentiment",
     }
 
     dataset = args.dataset
