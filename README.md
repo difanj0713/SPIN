@@ -4,7 +4,7 @@ Code repository for the paper ***Sparsify-then-Classify*** **: Towards Next-Gene
 This repository contains all experimental infrastructure for the paper. 
 
 ## Methodology
-![Proposed architecture of *Sparsify-then-Classify*](STC_architecture.jpg)
+![Proposed architecture of *Sparsify-then-Classify*](figs/STC_architecture.jpg)
 Our proposed STC method, as a seamless plug-and-play module on top of existing LLMs, follows a procedure of
 1. Internal Representation Extraction
      + We investigate the FFN activations and hidden states for all layers. The internal representations are all pooled across tokens (max pooling, average pooling, and single-token pooling) for each sentence input in batches.
@@ -21,7 +21,7 @@ Our experiments demonstrate that STC not only consistently improves the classifi
 + 6 well-established transformer-based language models: RoBERTa, DistilBERT, and GPT2 family including GPT2, GPT2-M, GPT2-L and GPT2-XL, are tested.
 + The performance of STC is reported when integrated into frozen pretrained and task-specific fine-tuned models, as well as 3 conventional baselines: sentence embedding, model fine-tuning, and in-context learning.
 
-![Baseline architecture of sentence embedding, model fine-tuning and in-context learning](baseline_architecture.jpg)
+![Baseline architecture of sentence embedding, model fine-tuning and in-context learning](figs/baseline_architecture.jpg)
 
 
 ## Citation
