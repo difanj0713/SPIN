@@ -2,7 +2,7 @@
 Code repository for the paper ***Sparsify-then-Classify*** **: Towards Next-Generation Text Classifier Leveraging Internal Neuron Representations from Large Language Models** 
 [[arXiv]](https://arxiv.org/abs/2311.15983) by Yilun Liu, Difan Jiao, and Ashton Anderson.
 
-This repository contains all experimental infrastructure for the paper. 
+*This repository will host all experimental infrastructure essential for the paper. Please note that some parts are still in the process of being finalized and will be uploaded soon.*
 
 ## Methodology
 ![Proposed architecture of *Sparsify-then-Classify*](figs/STC_architecture.jpg)
