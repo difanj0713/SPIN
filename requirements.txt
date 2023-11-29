@@ -1,0 +1,12 @@
+numpy
+pandas
+datasets
+pytz
+tqdm
+pickle
+transformers
+scikit-learn
+seaborn
+torch==2.0.1
+sqlalchemy
+plotly
