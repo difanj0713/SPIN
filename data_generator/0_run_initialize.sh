@@ -7,7 +7,7 @@ datasets=("imdb" "edos" "sst-2")
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
         echo "Downloading ${model} with dataset ${dataset} from Huggingface..."
-        output_path="../Sparsify-then-Classify/model"
+        output_path="../model"
         mkdir -p "$(dirname "$output_path")"
         python3 initialize.py --model_name ${model} --dataset ${dataset}
     done

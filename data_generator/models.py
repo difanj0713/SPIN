@@ -4,7 +4,7 @@ from imports import *
 
 # Tokenizers: 
 def distilbert_tokenizer(input_lines):
-    tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', cache_dir=f'../Sparsify-then-Classify/model/distilbert')
+    tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', cache_dir=f'../model/distilbert')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -12,7 +12,7 @@ def distilbert_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def roberta_tokenizer(input_lines):
-    tokenizer = RobertaTokenizer.from_pretrained('roberta-base', cache_dir=f'../Sparsify-then-Classify/model/roberta')
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base', cache_dir=f'../model/roberta')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -20,7 +20,7 @@ def roberta_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2', cache_dir=f'../Sparsify-then-Classify/model/gpt2')
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2', cache_dir=f'../model/gpt2')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -28,7 +28,7 @@ def GPT2_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_medium_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium', cache_dir=f'../Sparsify-then-Classify/model/gpt2-medium')
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium', cache_dir=f'../model/gpt2-medium')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -36,7 +36,7 @@ def GPT2_medium_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_large_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-large', cache_dir=f'../Sparsify-then-Classify/model/gpt2-large')
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-large', cache_dir=f'../model/gpt2-large')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -44,7 +44,7 @@ def GPT2_large_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_xl_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-xl', cache_dir=f'../Sparsify-then-Classify/model/gpt2-xl')
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-xl', cache_dir=f'../model/gpt2-xl')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -52,7 +52,7 @@ def GPT2_xl_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def distilbert_imdb_tokenizer(input_lines):
-    tokenizer = DistilBertTokenizer.from_pretrained('lvwerra/distilbert-imdb', cache_dir=f'../Sparsify-then-Classify/model/distilbert_imdb')
+    tokenizer = DistilBertTokenizer.from_pretrained('lvwerra/distilbert-imdb', cache_dir=f'../model/distilbert_imdb')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -60,7 +60,7 @@ def distilbert_imdb_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def roberta_imdb_tokenizer(input_lines):
-    tokenizer = RobertaTokenizer.from_pretrained('wrmurray/roberta-base-finetuned-imdb', cache_dir=f'../Sparsify-then-Classify/model/roberta_imdb')
+    tokenizer = RobertaTokenizer.from_pretrained('wrmurray/roberta-base-finetuned-imdb', cache_dir=f'../model/roberta_imdb')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -68,7 +68,7 @@ def roberta_imdb_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_imdb_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('mnoukhov/gpt2-imdb-sentiment-classifier', cache_dir=f'../Sparsify-then-Classify/model/gpt2_imdb')
+    tokenizer = GPT2Tokenizer.from_pretrained('mnoukhov/gpt2-imdb-sentiment-classifier', cache_dir=f'../model/gpt2_imdb')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -76,7 +76,7 @@ def GPT2_imdb_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_medium_imdb_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('edbeeching/gpt2-medium-imdb', cache_dir=f'../Sparsify-then-Classify/model/gpt2-medium_imdb')
+    tokenizer = GPT2Tokenizer.from_pretrained('edbeeching/gpt2-medium-imdb', cache_dir=f'../model/gpt2-medium_imdb')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -84,7 +84,7 @@ def GPT2_medium_imdb_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_large_imdb_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('edbeeching/gpt2-large-imdb', cache_dir=f'../Sparsify-then-Classify/model/gpt2-large_imdb')
+    tokenizer = GPT2Tokenizer.from_pretrained('edbeeching/gpt2-large-imdb', cache_dir=f'../model/gpt2-large_imdb')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -92,7 +92,7 @@ def GPT2_large_imdb_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_xl_imdb_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('edbeeching/gpt2-xl-imdb', cache_dir=f'../Sparsify-then-Classify/model/gpt2-xl_imdb')
+    tokenizer = GPT2Tokenizer.from_pretrained('edbeeching/gpt2-xl-imdb', cache_dir=f'../model/gpt2-xl_imdb')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -100,7 +100,7 @@ def GPT2_xl_imdb_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def distilbert_edos_tokenizer(input_lines):
-    tokenizer = DistilBertTokenizer.from_pretrained('lct-rug-2022/edos-2023-baseline-distilbert-base-uncased-label_sexist', cache_dir=f'../Sparsify-then-Classify/model/distilbert_edos')
+    tokenizer = DistilBertTokenizer.from_pretrained('lct-rug-2022/edos-2023-baseline-distilbert-base-uncased-label_sexist', cache_dir=f'../model/distilbert_edos')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -108,7 +108,7 @@ def distilbert_edos_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def roberta_edos_tokenizer(input_lines):
-    tokenizer = RobertaTokenizer.from_pretrained('lct-rug-2022/edos-2023-baseline-roberta-base-label_sexist', cache_dir=f'../Sparsify-then-Classify/model/roberta_edos')
+    tokenizer = RobertaTokenizer.from_pretrained('lct-rug-2022/edos-2023-baseline-roberta-base-label_sexist', cache_dir=f'../model/roberta_edos')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -116,7 +116,7 @@ def roberta_edos_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def distilbert_sst2_tokenizer(input_lines):
-    tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english', cache_dir=f'../Sparsify-then-Classify/model/distilbert_sst-2')
+    tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased-finetuned-sst-2-english', cache_dir=f'../model/distilbert_sst-2')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -124,7 +124,7 @@ def distilbert_sst2_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def roberta_sst2_tokenizer(input_lines):
-    tokenizer = RobertaTokenizer.from_pretrained('textattack/roberta-base-SST-2', cache_dir=f'../Sparsify-then-Classify/model/roberta_sst-2')
+    tokenizer = RobertaTokenizer.from_pretrained('textattack/roberta-base-SST-2', cache_dir=f'../model/roberta_sst-2')
     #tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -132,7 +132,7 @@ def roberta_sst2_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_sst2_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('PavanNeerudu/gpt2-finetuned-sst2', cache_dir=f'../Sparsify-then-Classify/model/gpt2_sst-2')
+    tokenizer = GPT2Tokenizer.from_pretrained('PavanNeerudu/gpt2-finetuned-sst2', cache_dir=f'../model/gpt2_sst-2')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -140,7 +140,7 @@ def GPT2_sst2_tokenizer(input_lines):
     return tokens_batch['input_ids'], tokens_batch['attention_mask']
 
 def GPT2_medium_sst2_tokenizer(input_lines):
-    tokenizer = GPT2Tokenizer.from_pretrained('michelecafagna26/gpt2-medium-finetuned-sst2-sentiment', cache_dir=f'../Sparsify-then-Classify/model/gpt2-medium_sst-2')
+    tokenizer = GPT2Tokenizer.from_pretrained('michelecafagna26/gpt2-medium-finetuned-sst2-sentiment', cache_dir=f'../model/gpt2-medium_sst-2')
     tokenizer.pad_token = '<|endoftext|>'
     tokens_batch = tokenizer(input_lines, padding='longest', truncation=True, 
         #return_overflowing_tokens=True, 
@@ -597,28 +597,28 @@ class GPT2:
         return output
 
 class GPT2Base(GPT2):
-    def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2', batch_size=1000):
+    def __init__(self, tokenizer, local_model_dir=f'../model/gpt2', batch_size=1000):
         self.n_positions = 1024
         self.n_layer = 48
         self.batch_size = batch_size
         super().__init__(tokenizer, local_model_dir)
 
 class GPT2Medium(GPT2):
-    def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2-medium', batch_size=1000):
+    def __init__(self, tokenizer, local_model_dir=f'../model/gpt2-medium', batch_size=1000):
         self.n_positions = 1024
         self.n_layer = 24
         self.batch_size = batch_size
         super().__init__(tokenizer, local_model_dir, batch_size)
 
 class GPT2Large(GPT2):
-    def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2-large', batch_size=1000):
+    def __init__(self, tokenizer, local_model_dir=f'../model/gpt2-large', batch_size=1000):
         self.n_positions = 1024
         self.n_layer = 36
         self.batch_size = batch_size
         super().__init__(tokenizer, local_model_dir, batch_size)
 
 class GPT2XL(GPT2):
-    def __init__(self, tokenizer, local_model_dir=f'../Sparsify-then-Classify/model/gpt2-xl', batch_size=1000):
+    def __init__(self, tokenizer, local_model_dir=f'../model/gpt2-xl', batch_size=1000):
         self.n_positions = 1024
         self.n_layer = 48
         self.batch_size = batch_size

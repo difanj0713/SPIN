@@ -14,7 +14,7 @@ def main():
     args = parser.parse_args()
 
     if args.dataset == "imdb":
-        dataset = datasets.load_dataset('imdb', cache_dir='../Sparsify-then-Classify/dataset/IMDb-plain_text')
+        dataset = datasets.load_dataset('imdb', cache_dir='../dataset/IMDb-plain_text')
         text_train = dataset['train']['text']
         label_train = dataset['train']['label']
         text_test = dataset['test']['text']
@@ -22,7 +22,7 @@ def main():
         text_train, label_train, text_val, label_val = train_test_split(text_train, label_train, test_size=0.20, random_state=42) # val split
 
     if args.dataset == "edos":
-        dataset_path = "../Sparsify-then-Classify/dataset/sexism.csv" # after a simple data wraggler to transform sexist/non-sexist to 0-1 labels
+        dataset_path = "../dataset/sexism.csv" # after a simple data wraggler to transform sexist/non-sexist to 0-1 labels
         df = pd.read_csv(dataset_path, encoding='utf-8')
 
         train_df = df[df['split'] == 'train']
@@ -40,7 +40,7 @@ def main():
         label_val = np.array(val_df['label'].to_list())
 
     if args.dataset == "sst-2":
-        dataset = datasets.load_dataset('glue', 'sst2', cache_dir='../Sparsify-then-Classify/dataset/sst-2')
+        dataset = datasets.load_dataset('glue', 'sst2', cache_dir='../dataset/sst-2')
         text_train = dataset['train']['sentence']
         label_train = dataset['train']['label']
         text_test = dataset['test']['sentence']
@@ -101,13 +101,13 @@ def main():
             sys.exit("Finetuned models not available for model {0}, dataset {1}".format(args.model_name, args.dataset))
 
         if args.model_name == "distilbert":
-            dm = DistilBertModel.from_pretrained(finetuned_model_dict[finetuned_model_key], cache_dir=f'../Sparsify-then-Classify/model/${finetuned_model_key}')
+            dm = DistilBertModel.from_pretrained(finetuned_model_dict[finetuned_model_key], cache_dir=f'../model/${finetuned_model_key}')
             model = model_dict[frozen_model_key](tokenizer=finetuned_tokenizer, model=dm, batch_size=batch_size)
         elif args.model_name == "roberta":
-            rm = RobertaModel.from_pretrained(finetuned_model_dict[finetuned_model_key], cache_dir=f'../Sparsify-then-Classify/model/${finetuned_model_key}')
+            rm = RobertaModel.from_pretrained(finetuned_model_dict[finetuned_model_key], cache_dir=f'../model/${finetuned_model_key}')
             model = model_dict[frozen_model_key](tokenizer=finetuned_tokenizer, model=rm, batch_size=batch_size)
         else:
-            local_model_dir = f"../Sparsify-then-Classify/model/{finetuned_model_key}"
+            local_model_dir = f"../model/{finetuned_model_key}"
             model = model_dict[frozen_model_key](tokenizer=finetuned_tokenizer, local_model_dir=local_model_dir, batch_size=batch_size)
         
         # train, val, test
@@ -116,7 +116,7 @@ def main():
                     output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
-        output_dir = f'../Sparsify-then-Classify/dataset_acts/{args.dataset}/train_all_{args.model_name}_finetuned_res.pkl'
+        output_dir = f'../dataset_acts/{args.dataset}/train_all_{args.model_name}_finetuned_res.pkl'
         with open(output_dir, 'wb') as f:
             pickle.dump(res, f)
 
@@ -125,7 +125,7 @@ def main():
                     output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
-        output_dir = f'../Sparsify-then-Classify/dataset_acts/{args.dataset}/val_all_{args.model_name}_finetuned_res.pkl'
+        output_dir = f'../dataset_acts/{args.dataset}/val_all_{args.model_name}_finetuned_res.pkl'
         with open(output_dir, 'wb') as f:
             pickle.dump(res, f)
 
@@ -134,7 +134,7 @@ def main():
                     output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
-        output_dir = f'../Sparsify-then-Classify/dataset_acts/{args.dataset}/test_all_{args.model_name}_finetuned_res.pkl'
+        output_dir = f'../dataset_acts/{args.dataset}/test_all_{args.model_name}_finetuned_res.pkl'
         with open(output_dir, 'wb') as f:
             pickle.dump(res, f)
         
@@ -143,13 +143,13 @@ def main():
         frozen_tokenizer = tokenizer_dict[frozen_model_key]
 
         if args.model_name == "distilbert":
-            dm = DistilBertModel.from_pretrained('distilbert-base-uncased', cache_dir=f'../Sparsify-then-Classify/model/distilbert')
+            dm = DistilBertModel.from_pretrained('distilbert-base-uncased', cache_dir=f'../model/distilbert')
             model = model_dict[frozen_model_key](tokenizer=frozen_tokenizer, model=dm, batch_size=batch_size)
         elif args.model_name == "roberta":
-            rm = RobertaModel.from_pretrained('roberta-base', cache_dir=f'../Sparsify-then-Classify/model/roberta')
+            rm = RobertaModel.from_pretrained('roberta-base', cache_dir=f'../model/roberta')
             model = model_dict[frozen_model_key](tokenizer=frozen_tokenizer, model=rm, batch_size=batch_size)
         else:
-            local_model_dir = f"../Sparsify-then-Classify/model/{frozen_model_key}"
+            local_model_dir = f"../model/{frozen_model_key}"
             model = model_dict[frozen_model_key](tokenizer=frozen_tokenizer, local_model_dir=local_model_dir, batch_size=batch_size)
 
         # train, val, test
@@ -158,7 +158,7 @@ def main():
                     output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
-        output_dir = f'../Sparsify-then-Classify/dataset_acts/{args.dataset}/train_all_{args.model_name}_res.pkl'
+        output_dir = f'../dataset_acts/{args.dataset}/train_all_{args.model_name}_res.pkl'
         with open(output_dir, 'wb') as f:
             pickle.dump(res, f)
 
@@ -167,7 +167,7 @@ def main():
                     output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
-        output_dir = f'../Sparsify-then-Classify/dataset_acts/{args.dataset}/val_all_{args.model_name}_res.pkl'
+        output_dir = f'../dataset_acts/{args.dataset}/val_all_{args.model_name}_res.pkl'
         with open(output_dir, 'wb') as f:
             pickle.dump(res, f)
 
@@ -176,7 +176,7 @@ def main():
                     output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
-        output_dir = f'../Sparsify-then-Classify/dataset_acts/{args.dataset}/test_all_{args.model_name}_res.pkl'
+        output_dir = f'../dataset_acts/{args.dataset}/test_all_{args.model_name}_res.pkl'
         with open(output_dir, 'wb') as f:
             pickle.dump(res, f)
 
