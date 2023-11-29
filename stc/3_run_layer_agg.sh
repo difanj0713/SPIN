@@ -7,9 +7,9 @@ finetuned=0
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
-        echo "Starting layer-wise probe for model ${model} over dataset ${dataset}..."
-        output_path="../dataset_acts/${dataset}/performance"
+        echo "Layer-wise Aggregation and Classification for model ${model} over dataset ${dataset}..."
+        output_path="../dataset_acts/${dataset}/new_agg"
         mkdir -p ${output_path}
-        python3 sparsify.py --model_name ${model} --dataset ${dataset} --is_finetuned ${finetuned}
+        python3 layer_agg.py --model_name ${model} --dataset ${dataset} --is_finetuned ${finetuned}
     done
 done
