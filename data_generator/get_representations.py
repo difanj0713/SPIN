@@ -13,40 +13,7 @@ def main():
                         help='Flag for finetuned models. Options: 1 for finetuned, 0 for frozen')
     args = parser.parse_args()
 
-    if args.dataset == "imdb":
-        dataset = datasets.load_dataset('imdb', cache_dir='../dataset/IMDb-plain_text')
-        text_train = dataset['train']['text']
-        label_train = dataset['train']['label']
-        text_test = dataset['test']['text']
-        label_test = dataset['test']['label']
-        text_train, text_val, label_train, label_val = train_test_split(text_train, label_train, test_size=0.20, random_state=42) # val split
-
-    if args.dataset == "edos":
-        dataset_path = "../dataset/sexism.csv" # after a simple data wraggler to transform sexist/non-sexist to 0-1 labels
-        df = pd.read_csv(dataset_path, encoding='utf-8')
-
-        train_df = df[df['split'] == 'train']
-        test_df = df[df['split'] == 'test']
-        val_df = df[df['split'] == 'dev']
-        train_df = train_df.reindex(train_df['text'].str.len().sort_values(ascending=False).index)
-        test_df = test_df.reindex(test_df['text'].str.len().sort_values(ascending=False).index)
-        val_df = val_df.reindex(val_df['text'].str.len().sort_values(ascending=False).index)
-
-        text_train = train_df['text'].to_list()
-        label_train = np.array(train_df['label'].to_list())
-        text_test = test_df['text'].to_list()
-        label_test = np.array(test_df['label'].to_list())
-        text_val = val_df['text'].to_list()
-        label_val = np.array(val_df['label'].to_list())
-
-    if args.dataset == "sst-2":
-        dataset = datasets.load_dataset('glue', 'sst2', cache_dir='../dataset/sst-2')
-        text_train = dataset['train']['sentence']
-        label_train = dataset['train']['label']
-        text_test = dataset['test']['sentence']
-        label_test = dataset['test']['label']
-        text_val = dataset['validation']['sentence']
-        label_val = dataset['validation']['label']
+    text_train, text_val, text_test, label_train, label_val, label_test = my_train_test_split(args.dataset)
     
     finetuned_model_key = f"{args.model_name}_{args.dataset}"
     frozen_model_key = f"{args.model_name}"
