@@ -168,9 +168,11 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
                 cumul_dict['act', layer, pooling_choice, threshold, len(all_selected_features), 'val'] = best_val_acc
 
     max_k = 0
+    max_v = 0
     for key, value in cumul_dict.items():
         if value > max_v and key[-1] == 'test':
             max_k = key
+            max_v = value
     (rep, l, p, eta, n, _)= max_k
     test_max_k = (rep, l, p, eta, n, 'test')
     print("Final STC performance: ", cumul_dict[test_max_k])

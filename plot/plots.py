@@ -33,11 +33,11 @@ def plot_what_which_where(model_name, dataset, is_finetuned):
     test_df_hs = test_df[test_df['representation'] == 'hs']
     test_df_act = test_df[test_df['representation'] == 'act']
 
-    num_layers = 36
-    baseline_solid = 0.9013
+    num_layers = act_layer_dict[model_name]
+    baseline_solid = 0.9013 # corresponding frozen head performance
     baseline_solid_name = 'frozen baseline'
-    #baseline_dash = 0.9274
-    #baseline_dash_name = 'fine-tuned baseline'
+    baseline_dash = 0.9274 # corresponding finetuned head performance 
+    baseline_dash_name = 'fine-tuned baseline'
 
     fig = make_subplots(rows=2, cols=4, 
         shared_xaxes=True, shared_yaxes=True,
@@ -151,7 +151,7 @@ def plot_what_which_where(model_name, dataset, is_finetuned):
 
 
     fig.add_hline(y=baseline_solid, line_dash='0', line_color="rgba(0,0,0,0.2)", row=1, col='all')
-    #fig.add_hline(y=baseline_dash, line_dash='6', line_color="rgba(0,0,0,0.2)", row=1, col='all')
+    fig.add_hline(y=baseline_dash, line_dash='6', line_color="rgba(0,0,0,0.2)", row=1, col='all')
     if baseline_dash < baseline_solid:
         baseline_dash_position = 'bottom left'
         baseline_solid_position = 'top left'
@@ -160,12 +160,12 @@ def plot_what_which_where(model_name, dataset, is_finetuned):
         baseline_solid_position = 'bottom left'
     fig.add_hline(y=baseline_solid, line_dash='0', line_color="rgba(0,0,0,0)", row=1, col=2,
         annotation_text=baseline_solid_name, annotation_position=baseline_solid_position)
-    #fig.add_hline(y=baseline_dash, line_dash='6', line_color="rgba(0,0,0,0)", row=1, col=2,
-    #    annotation_text=baseline_dash_name, annotation_position=baseline_dash_position)
+    fig.add_hline(y=baseline_dash, line_dash='6', line_color="rgba(0,0,0,0)", row=1, col=2,
+        annotation_text=baseline_dash_name, annotation_position=baseline_dash_position)
     fig.add_hline(y=baseline_solid, line_dash='0', line_color="rgba(0,0,0,0)", row=1, col=4,
         annotation_text=baseline_solid_name, annotation_position=baseline_solid_position)
-    #fig.add_hline(y=baseline_dash, line_dash='6', line_color="rgba(0,0,0,0)", row=1, col=4,
-    #    annotation_text=baseline_dash_name, annotation_position=baseline_dash_position)
+    fig.add_hline(y=baseline_dash, line_dash='6', line_color="rgba(0,0,0,0)", row=1, col=4,
+        annotation_text=baseline_dash_name, annotation_position=baseline_dash_position)
 
 
     fig.update_yaxes(range=[0.45,1], row=1, col=1, title_text='Accuracy', automargin=True)
@@ -195,6 +195,6 @@ def plot_what_which_where(model_name, dataset, is_finetuned):
 
     fig.show()
     if is_finetuned:
-        fig.write_image(f'../gpt-activations/dataset_acts/sst-2/what-which-where/{model_name}_finetuned.pdf')
+        fig.write_image(f'../gpt-activations/dataset_acts/{dataset}/what-which-where/{model_name}_finetuned.pdf')
     else:
-        fig.write_image(f'../gpt-activations/dataset_acts/sst-2/what-which-where/{model_name}_frozen.pdf')
+        fig.write_image(f'../gpt-activations/dataset_acts/{dataset}/what-which-where/{model_name}_frozen.pdf')
