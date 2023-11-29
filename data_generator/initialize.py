@@ -25,10 +25,10 @@ def main():
 
     dataset = args.dataset
     model_name = args.model_name
-    frozen_model_dir = f"../Sparsify-then-Classify/model/{args.model_name}"
+    frozen_model_dir = f"../model/{args.model_name}"
     if not os.path.exists(frozen_model_dir): # download the frozen model
         if args.model_name.startswith('gpt2'):
-            local_model_dir = f"../Sparsify-then-Classify/model/{args.model_name}"
+            local_model_dir = f"../model/{args.model_name}"
             tokenizer = GPT2Tokenizer.from_pretrained(args.model_name, cache_dir=local_model_dir)
             model = GPT2Model.from_pretrained(args.model_name, cache_dir=local_model_dir)
             
@@ -49,12 +49,12 @@ def main():
                     pickle.dump(h[i], f)
 
         elif args.model_name == "distilbert":
-            local_model_dir = f"../Sparsify-then-Classify/model/{args.model_name}"
+            local_model_dir = f"../model/{args.model_name}"
             tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', cache_dir=local_model_dir)
             dm = DistilBertModel.from_pretrained('distilbert-base-uncased', cache_dir=local_model_dir)
         
         elif args.model_name == "roberta":
-            local_model_dir = f"../Sparsify-then-Classify/model/{args.model_name}"
+            local_model_dir = f"../model/{args.model_name}"
             tokenizer = RobertaTokenizer.from_pretrained('roberta-base', cache_dir=local_model_dir)
             dm = RobertaModel.from_pretrained('roberta-base', cache_dir=local_model_dir)
         
@@ -63,10 +63,10 @@ def main():
 
     model_key = f"{args.model_name}_{args.dataset}"
     if model_key in finetuned_model_dict:
-        finetuned_model_dir = f"../Sparsify-then-Classify/model/{model_key}"
+        finetuned_model_dir = f"../model/{model_key}"
         if not os.path.exists(finetuned_model_dir):
             if args.model_name.startswith('gpt2'):
-                local_model_dir = f"../Sparsify-then-Classify/model/{model_key}"
+                local_model_dir = f"../model/{model_key}"
                 tokenizer = GPT2Tokenizer.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
                 model = GPT2Model.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
                 
@@ -87,12 +87,12 @@ def main():
                         pickle.dump(h[i], f)
             
             elif args.model_name == "distilbert":
-                local_model_dir = f"../Sparsify-then-Classify/model/{model_key}"
+                local_model_dir = f"../model/{model_key}"
                 tokenizer = DistilBertTokenizer.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
                 dm = DistilBertModel.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
             
             elif args.model_name == "roberta":
-                local_model_dir = f"../Sparsify-then-Classify/model/{model_key}"
+                local_model_dir = f"../model/{model_key}"
                 tokenizer = RobertaTokenizer.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
                 dm = RobertaModel.from_pretrained(finetuned_model_dict[model_key], cache_dir=local_model_dir)
             

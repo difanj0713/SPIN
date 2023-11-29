@@ -19,7 +19,7 @@ def main():
         label_train = dataset['train']['label']
         text_test = dataset['test']['text']
         label_test = dataset['test']['label']
-        text_train, label_train, text_val, label_val = train_test_split(text_train, label_train, test_size=0.20, random_state=42) # val split
+        text_train, text_val, label_train, label_val = train_test_split(text_train, label_train, test_size=0.20, random_state=42) # val split
 
     if args.dataset == "edos":
         dataset_path = "../dataset/sexism.csv" # after a simple data wraggler to transform sexist/non-sexist to 0-1 labels
