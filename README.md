@@ -1,5 +1,5 @@
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
-[![arXiv](https://img.shields.io/badge/arXiv-2311.15983-b31b1b.svg)]([https://arxiv.org/abs/2311.15983](https://arxiv.org/abs/2311.15983))
+[![arXiv](https://img.shields.io/badge/arXiv-2311.15983-b31b1b.svg)](https://arxiv.org/abs/2311.15983)
 
 # Sparsify-then-Classify
 Code repository for the paper ***Sparsify-then-Classify*** **: Towards Next-Generation Text Classifier Leveraging Internal Neuron Representations from Large Language Models**  by Yilun Liu, Difan Jiao, and Ashton Anderson.
