@@ -8,6 +8,11 @@ f1_score_macro = partial(f1_score, average='macro')
 metrics_dict = {"imdb": accuracy_score, "edos": f1_score_macro, "sst-2": accuracy_score}
 
 def linear_probe(model_name, is_finetuned, dataset, iter_interval=2, max_iter_increment=16):
+    if model_name.lower().startswith("flan"):
+        pooling_choices = 4
+    else:
+        pooling_choices = 3
+
     if is_finetuned:
         train_pkl = f'../dataset_acts/{dataset}/train_all_{model_name}_finetuned_res.pkl'
         test_pkl = f'../dataset_acts/{dataset}/test_all_{model_name}_finetuned_res.pkl'
@@ -37,36 +42,41 @@ def linear_probe(model_name, is_finetuned, dataset, iter_interval=2, max_iter_in
     val_acc_act = defaultdict(float)
     clf_dict = defaultdict()
 
+    default_C_values = [0.2, 0.5, 1, 5, 10, 100] # for L1-regularization
     for layer in range(hs_layer_dict[model_name]):
         best_clf_all=0
         #best_layer=-1
         best_iter_all=0
         best_pooling_choice=-1
         best_val_acc_all=0
+        #best_C_all=-1
         for pooling_choice in range(0, 3, 1):
             X_train_layer = train_res[1][layer,:,:,pooling_choice].detach()
             X_val_layer = val_res[1][layer,:,:,pooling_choice].detach()
             X_test_layer = test_res[1][layer,:,:,pooling_choice].detach()
-            
-            clf = LogisticRegression(max_iter=iter_interval, C=0.2, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
             best_clf=0
             best_iter=0
             best_val_acc=0
+            #best_C=0
+            for C in default_C_values:
+                clf = LogisticRegression(max_iter=iter_interval, C=C, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
             
-            for i in range(max_iter_increment):
-                clf.fit(X_train_layer, y_train_full)
-                tmp_val_acc = metrics_dict[dataset](y_val_full, clf.predict(X_val_layer))
-                if best_val_acc < tmp_val_acc:
-                    best_clf = clf
-                    best_iter = int((i+1)*iter_interval)
-                    best_val_acc = tmp_val_acc
-                if best_val_acc_all < tmp_val_acc:
-                    best_clf_all = clf
-                    best_val_acc_all = tmp_val_acc
-                    best_iter_all = int((i+1)*iter_interval)
-                    best_pooling_choice = pooling_choice
-                    #best_layer = layer
-                    #best_train_acc = accuracy_score(y_train, clf.predict(X_train))
+                for i in range(max_iter_increment):
+                    clf.fit(X_train_layer, y_train_full)
+                    tmp_val_acc = metrics_dict[dataset](y_val_full, clf.predict(X_val_layer))
+                    if best_val_acc < tmp_val_acc:
+                        best_clf = clf
+                        best_iter = int((i+1)*iter_interval)
+                        best_val_acc = tmp_val_acc
+                        best_C = C
+                    if best_val_acc_all < tmp_val_acc:
+                        best_clf_all = clf
+                        best_val_acc_all = tmp_val_acc
+                        best_iter_all = int((i+1)*iter_interval)
+                        best_pooling_choice = pooling_choice
+                        best_C = C
+                        #best_layer = layer
+                        #best_train_acc = accuracy_score(y_train, clf.predict(X_train))
             
             clf_dict[("hs", pooling_choice, layer)] = best_clf
         pooling = pooling_dict[best_pooling_choice]
@@ -90,30 +100,32 @@ def linear_probe(model_name, is_finetuned, dataset, iter_interval=2, max_iter_in
         best_iter_all=0
         best_pooling_choice=-1
         best_val_acc_all=0
+        best_C_all=-1
         for pooling_choice in range(0, 3, 1):
             X_train_layer = train_res[2][layer,:,:,pooling_choice].detach()
             X_val_layer = val_res[2][layer,:,:,pooling_choice].detach()
             X_test_layer = test_res[2][layer,:,:,pooling_choice].detach()
-            
-            clf = LogisticRegression(max_iter=iter_interval, C=0.2, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
             best_clf=0
             best_iter=0
             best_val_acc=0
+
+            for C in default_C_values:
+                clf = LogisticRegression(max_iter=iter_interval, C=C, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
             
-            for i in range(max_iter_increment):
-                clf.fit(X_train_layer, y_train_full)
-                tmp_val_acc = accuracy_score(y_val_full, clf.predict(X_val_layer))
-                if best_val_acc < tmp_val_acc:
-                    best_clf = clf
-                    best_iter = int((i+1)*iter_interval)
-                    best_val_acc = tmp_val_acc
-                if best_val_acc_all < tmp_val_acc:
-                    best_clf_all = clf
-                    best_val_acc_all = tmp_val_acc
-                    best_iter_all = int((i+1)*iter_interval)
-                    best_pooling_choice = pooling_choice
-                    #best_layer = layer
-                    #best_train_acc = accuracy_score(y_train, clf.predict(X_train))
+                for i in range(max_iter_increment):
+                    clf.fit(X_train_layer, y_train_full)
+                    tmp_val_acc = accuracy_score(y_val_full, clf.predict(X_val_layer))
+                    if best_val_acc < tmp_val_acc:
+                        best_clf = clf
+                        best_iter = int((i+1)*iter_interval)
+                        best_val_acc = tmp_val_acc
+                    if best_val_acc_all < tmp_val_acc:
+                        best_clf_all = clf
+                        best_val_acc_all = tmp_val_acc
+                        best_iter_all = int((i+1)*iter_interval)
+                        best_pooling_choice = pooling_choice
+                        #best_layer = layer
+                        #best_train_acc = accuracy_score(y_train, clf.predict(X_train))
             
             clf_dict[("act", pooling_choice, layer)] = best_clf
         pooling = pooling_dict[best_pooling_choice]

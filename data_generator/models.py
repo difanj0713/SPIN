@@ -223,20 +223,19 @@ class Bert:
         head_mask = [None] * layer_limit
 
         input_shape = hidden_states.size()
-        attention_mask = mask#: torch.Tensor = self.model.get_extended_attention_mask(mask, input_shape)
+        attention_mask: torch.Tensor = self.model.get_extended_attention_mask(mask, input_shape)
 
         all_hidden_states = () if output_all_hidden_states else None
         all_activations = () if output_all_activations else None
         all_pooled_hidden_states = () if output_all_pooled_hidden_states else None
         all_pooled_activations = () if output_all_pooled_activations else None
         
-        with torch.no_grad():
-            h = hidden_states
+        h = hidden_states
 
-        for layer in range(layer_limit):            
+        for layer in range(layer_limit):
             with torch.no_grad():
-                tmp_block = self.model.transformer.layer[layer]
-
+                tmp_block = self.model.encoder.layer[layer]
+            
                 if output_all_hidden_states:
                     all_hidden_states += (h,)
                 if output_all_pooled_hidden_states:
@@ -248,17 +247,14 @@ class Bert:
                     max_hs = hs.max(dim=1)[0]
                     pooled_hs = torch.stack([first_hs, max_hs, avg_hs], dim=-1)
                     all_pooled_hidden_states += (pooled_hs,)
-
+                
                 attn = tmp_block.attention
-                sa_output = attn(query=h, key=h, value=h, mask=attention_mask)
-                sa_output = tmp_block.sa_layer_norm(sa_output[0] + h)
+                attn_output = attn(h, attention_mask)[0]
+
+                act = tmp_block.intermediate(attn_output)
+                layer_output = tmp_block.output(act, attn_output)
                 
-                tmp_ffn = tmp_block.ffn
-                act = tmp_ffn.activation(tmp_ffn.lin1(sa_output))
-                ffn_output = tmp_ffn.dropout(tmp_ffn.lin2(act))
-                ffn_output: torch.Tensor = tmp_block.output_layer_norm(ffn_output + sa_output)
-                
-                h = ffn_output
+                h = layer_output
             
                 if output_all_activations:
                     all_activation += (act,)
@@ -271,7 +267,7 @@ class Bert:
                     max_act = act.max(dim=1)[0]
                     pooled_act = torch.stack([first_act, max_act, avg_act], dim=-1)
                     all_pooled_activations += (pooled_act,)
-
+                
             if verbose>1:
                 print('Layer ', layer + 1, ' / ', layer_limit, ' Processed.')
         
@@ -601,7 +597,7 @@ class GPT2Base(GPT2):
         self.n_positions = 1024
         self.n_layer = 48
         self.batch_size = batch_size
-        super().__init__(tokenizer, local_model_dir)
+        super().__init__(tokenizer, local_model_dir, batch_size)
 
 class GPT2Medium(GPT2):
     def __init__(self, tokenizer, local_model_dir=f'../model/gpt2-medium', batch_size=1000):

@@ -8,6 +8,11 @@ f1_score_macro = partial(f1_score, average='macro')
 metrics_dict = {"imdb": accuracy_score, "edos": f1_score_macro, "sst-2": accuracy_score}
 
 def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_iter_increment=8):
+    if model_name.lower().startswith("flan"):
+        pooling_choices = 4
+    else:
+        pooling_choices = 3
+    
     if is_finetuned:
         train_pkl = f'../dataset_acts/{dataset}/train_all_{model_name}_finetuned_res.pkl'
         test_pkl = f'../dataset_acts/{dataset}/test_all_{model_name}_finetuned_res.pkl'
@@ -47,6 +52,7 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
     aggregated_X_train = torch.empty(0)
     aggregated_X_val = torch.empty(0)
     aggregated_X_test = torch.empty(0)
+    default_C_values = [0.2, 0.5, 1, 5, 10, 100] # for L1-regularization
 
     for pooling_choice in range(3):
         for threshold in eta_list:
@@ -90,15 +96,16 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
                 best_tmp_clf=0
                 best_iter=0
                 best_val_acc=0
-                tmp_clf = LogisticRegression(max_iter=iter_interval, C=0.2, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
+                for C in default_C_values:
+                    tmp_clf = LogisticRegression(max_iter=iter_interval, C=C, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
 
-                for i in range(max_iter_increment):
-                    tmp_clf.fit(aggregated_X_train, y_train_full)
-                    tmp_val_acc = metrics_dict[dataset](y_val_full, tmp_clf.predict(aggregated_X_val))
-                    if best_val_acc < tmp_val_acc:
-                        best_tmp_clf = tmp_clf
-                        best_iter = int((i+1)*iter_interval)
-                        best_val_acc = tmp_val_acc
+                    for i in range(max_iter_increment):
+                        tmp_clf.fit(aggregated_X_train, y_train_full)
+                        tmp_val_acc = metrics_dict[dataset](y_val_full, tmp_clf.predict(aggregated_X_val))
+                        if best_val_acc < tmp_val_acc:
+                            best_tmp_clf = tmp_clf
+                            best_iter = int((i+1)*iter_interval)
+                            best_val_acc = tmp_val_acc
 
                 pooling = pooling_dict[pooling_choice]
                 y_pred = best_tmp_clf.predict(aggregated_X_test)
@@ -149,15 +156,16 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
                 best_tmp_clf=0
                 best_iter=0
                 best_val_acc=0
-                tmp_clf = LogisticRegression(max_iter=iter_interval, C=0.2, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
+                for C in default_C_values:
+                    tmp_clf = LogisticRegression(max_iter=iter_interval, C=C, penalty='elasticnet', l1_ratio=1, solver='saga', multi_class='ovr', n_jobs=-1, random_state=42, warm_start=True)
 
-                for i in range(max_iter_increment):
-                    tmp_clf.fit(aggregated_X_train, y_train_full)
-                    tmp_val_acc = metrics_dict[dataset](y_val_full, tmp_clf.predict(aggregated_X_val))
-                    if best_val_acc < tmp_val_acc:
-                        best_tmp_clf = tmp_clf
-                        best_iter = int((i+1)*iter_interval)
-                        best_val_acc = tmp_val_acc
+                    for i in range(max_iter_increment):
+                        tmp_clf.fit(aggregated_X_train, y_train_full)
+                        tmp_val_acc = metrics_dict[dataset](y_val_full, tmp_clf.predict(aggregated_X_val))
+                        if best_val_acc < tmp_val_acc:
+                            best_tmp_clf = tmp_clf
+                            best_iter = int((i+1)*iter_interval)
+                            best_val_acc = tmp_val_acc
 
                 pooling = pooling_dict[pooling_choice]
                 y_pred = best_tmp_clf.predict(aggregated_X_test)
@@ -170,7 +178,7 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
     max_k = 0
     max_v = 0
     for key, value in cumul_dict.items():
-        if value > max_v and key[-1] == 'test':
+        if value > max_v and key[-1] == 'val':
             max_k = key
             max_v = value
     (rep, l, p, eta, n, _)= max_k
@@ -191,7 +199,7 @@ def main() -> None:
                         help='Flag for finetuned models. Options: 1 for finetuned, 0 for frozen')
     args = parser.parse_args()
 
-    eta_list = threshold_list = [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5] # hyperparam as how many cumsum weights to be selected per layer.
+    eta_list = [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5] # hyperparam as how many cumsum weights to be selected per layer.
     layer_agg(args.model_name, args.is_finetuned, args.dataset, eta_list, iter_interval=2, max_iter_increment=16)
 
 if __name__ == "__main__":

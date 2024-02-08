@@ -63,8 +63,8 @@ def my_train_test_split(dataset_name):
         text_val = val_df['text'].to_list()
         label_val = np.array(val_df['label'].to_list())
 
-    if args.dataset == "sst-2":
-        dataset_name = datasets.load_dataset('glue', 'sst2', cache_dir='../dataset/sst-2') # to conform with general fine-tuned approach, we report val performance
+    if dataset_name == "sst-2":
+        dataset = datasets.load_dataset('glue', 'sst2', cache_dir='../dataset/sst-2') # to conform with general fine-tuned approach, we report val performance
         text_train = dataset['train']['sentence']
         label_train = dataset['train']['label']
         text_train, text_val, label_train, label_val = train_test_split(text_train, label_train, test_size=0.03, random_state=42) # val split
