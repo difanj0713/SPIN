@@ -10,7 +10,6 @@ pooling_dict = {0: "first_token", 1: "max_pooling", 2: "avg_pooling"}
 f1_score_macro = partial(f1_score, average='macro')
 metrics_dict = {"imdb": accuracy_score, "edos": f1_score_macro, "sst-2": accuracy_score}
 
-
 def agg_run(args):
     
     pooling_choice, threshold, top_k, hs_or_act, model_name, record, train_res, val_res, test_res, dataset, default_C_values, iter_interval, max_iter_increment, cumul_dict, clf_dict, y_train_full, y_val_full, y_test_full = args
@@ -21,11 +20,11 @@ def agg_run(args):
     aggregated_X_test = torch.empty(0)
     
     if hs_or_act == 'hs':
-        layer_range = hs_layer_dict[model_name]
         indexer = 1
+        layer_range = hs_layer_dict[model_name]
     elif hs_or_act == 'act':
-        layer_range = act_layer_dict[model_name]
         indexer = 2
+        layer_range = act_layer_dict[model_name]
     else:
         raise ValueError("Invalid hs_or_act value")
     
@@ -56,6 +55,7 @@ def agg_run(args):
         aggregated_X_val = torch.cat([aggregated_X_val, X_val_layer], dim=1)
         aggregated_X_test = torch.cat([aggregated_X_test , X_test_layer], dim=1)
         
+        layer_count += 1
         if layer_count == top_k:
             break
 
@@ -77,18 +77,22 @@ def agg_run(args):
     y_pred = best_tmp_clf.predict(aggregated_X_test)
     test_acc = metrics_dict[dataset](y_test_full, y_pred)
     
+    clf_ret = {}
+    cumul_ret = {}
     if hs_or_act == 'hs':
-        print("First {0} Layers Aggregated Hidden States, Cumulative Ratio {4}, Pooling choice {1}: Performance = {2}, best_iter = {3}".format(layer, pooling, test_acc, best_iter, threshold))
-        clf_dict['hs', layer, pooling_choice, threshold, len(all_selected_features)] = best_tmp_clf
-        cumul_dict['hs', layer, pooling_choice, threshold, len(all_selected_features), 'test'] = test_acc
-        cumul_dict['hs', layer, pooling_choice, threshold, len(all_selected_features), 'val'] = best_val_acc
+        #print("First {0} Layers Aggregated Hidden States, Cumulative Ratio {4}, Pooling choice {1}: Performance = {2}, best_iter = {3}".format(layer, pooling, test_acc, best_iter, threshold))
+        clf_ret['hs', layer, pooling_choice, threshold, len(all_selected_features)] = best_tmp_clf
+        cumul_ret['hs', layer, pooling_choice, threshold, len(all_selected_features), 'test'] = test_acc
+        cumul_ret['hs', layer, pooling_choice, threshold, len(all_selected_features), 'val'] = best_val_acc
     elif hs_or_act == 'act':
-        print("First {0} Layers Aggregated Activations, Cumulative Ratio {4}, Pooling choice {1}: Performance = {2}, best_iter = {3}".format(layer, pooling, test_acc, best_iter, threshold))
-        clf_dict['act', layer, pooling_choice, threshold, len(all_selected_features)] = best_tmp_clf
-        cumul_dict['act', layer, pooling_choice, threshold, len(all_selected_features), 'test'] = test_acc
-        cumul_dict['act', layer, pooling_choice, threshold, len(all_selected_features), 'val'] = best_val_acc
+        #print("First {0} Layers Aggregated Activations, Cumulative Ratio {4}, Pooling choice {1}: Performance = {2}, best_iter = {3}".format(layer, pooling, test_acc, best_iter, threshold))
+        clf_ret['act', layer, pooling_choice, threshold, len(all_selected_features)] = best_tmp_clf
+        cumul_ret['act', layer, pooling_choice, threshold, len(all_selected_features), 'test'] = test_acc
+        cumul_ret['act', layer, pooling_choice, threshold, len(all_selected_features), 'val'] = best_val_acc
     else:
         raise ValueError("Invalid hs_or_act value")
+    
+    return clf_ret, cumul_ret
 
 def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_iter_increment=8):
     if model_name.lower().startswith("flan"):
@@ -131,10 +135,10 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
     #top_k_list = [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000]
     #threshold_list = [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
 
-    all_selected_features = []
-    aggregated_X_train = torch.empty(0)
-    aggregated_X_val = torch.empty(0)
-    aggregated_X_test = torch.empty(0)
+    # all_selected_features = []
+    # aggregated_X_train = torch.empty(0)
+    # aggregated_X_val = torch.empty(0)
+    # aggregated_X_test = torch.empty(0)
     default_C_values = [0.2, 0.5, 1, 5, 10, 100]
     
     configs = []
@@ -145,11 +149,13 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
             for top_k in range(act_layer_dict[model_name]):
                 configs.append((pooling_choice, threshold, top_k, 'act'))
     
-    process_map(agg_run, [(pooling_choice, threshold, top_k, hs_or_act, model_name, record, train_res, val_res, test_res, dataset, default_C_values, iter_interval, max_iter_increment, cumul_dict, clf_dict, y_train_full, y_val_full, y_test_full) for pooling_choice, threshold, top_k, hs_or_act in configs], max_workers=32, chunksize=1)
+    results = process_map(agg_run, [(pooling_choice, threshold, top_k, hs_or_act, model_name, record, train_res, val_res, test_res, dataset, default_C_values, iter_interval, max_iter_increment, cumul_dict, clf_dict, y_train_full, y_val_full, y_test_full) for pooling_choice, threshold, top_k, hs_or_act in configs], max_workers=32, chunksize=1)
+    for clf_ret, cumul_ret in results:
+        clf_dict.update(clf_ret)
+        cumul_dict.update(cumul_ret)
     
     # agg_run(configs[0][0], configs[0][1], configs[0][2], model_name, record, train_res, val_res, test_res, dataset, default_C_values, iter_interval, max_iter_increment, cumul_dict, clf_dict, y_train_full, y_val_full, y_test_full)
-    pdb.set_trace()
-
+    #pdb.set_trace()
     max_k = 0
     max_v = 0
     for key, value in cumul_dict.items():
@@ -159,8 +165,6 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
     (rep, l, p, eta, n, _)= max_k
     test_max_k = (rep, l, p, eta, n, 'test')
     print("Final STC performance: ", cumul_dict[test_max_k])
-
-    pdb.set_trace()
     with open(cumul_dict_dir, 'wb') as f:
         pickle.dump(cumul_dict, f)
     with open(clf_dict_dir, 'wb') as f:
@@ -176,9 +180,9 @@ def main() -> None:
                         help='Flag for finetuned models. Options: 1 for finetuned, 0 for frozen')
     args = parser.parse_args()
 
-    eta_list = [0.5]
-    #eta_list = [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5] # hyperparam as how many cumsum weights to be selected per layer.
-    layer_agg(args.model_name, args.is_finetuned, args.dataset, eta_list, iter_interval=2, max_iter_increment=16)
+    #eta_list = [0.01]
+    eta_list = [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1] # hyperparam as how many cumsum weights to be selected per layer.
+    layer_agg(args.model_name, args.is_finetuned, args.dataset, eta_list, iter_interval=4, max_iter_increment=16)
 
 if __name__ == "__main__":
     main()
