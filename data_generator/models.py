@@ -169,8 +169,6 @@ class Bert:
         
         n_lines = input_ids.shape[0]
         self.n_lines = n_lines
-        device = input_ids.device
-
         batch_embedding = {}
 
         batch_id = 0
@@ -235,7 +233,6 @@ class Bert:
         for layer in range(layer_limit):
             with torch.no_grad():
                 tmp_block = self.model.encoder.layer[layer]
-            
                 if output_all_hidden_states:
                     all_hidden_states += (h,)
                 if output_all_pooled_hidden_states:
@@ -250,10 +247,8 @@ class Bert:
                 
                 attn = tmp_block.attention
                 attn_output = attn(h, attention_mask)[0]
-
                 act = tmp_block.intermediate(attn_output)
                 layer_output = tmp_block.output(act, attn_output)
-                
                 h = layer_output
             
                 if output_all_activations:
@@ -354,12 +349,226 @@ class Bert:
         
         return output
 
+'''
 class DistilBert(Bert):
     def __init__(self, tokenizer, model, batch_size=1000):
         self.n_positions = 512
         self.n_layer = 6
         self.batch_size = batch_size
         super().__init__(tokenizer, model, batch_size)
+'''
+class DistilBert:
+    def __init__(self, tokenizer, model, batch_size=500):
+        self.n_positions = 512
+        self.n_layer = 6
+        self.tokenizer = tokenizer  # input: list of strings, return: (input_ids, attention_mask)
+        self.model = model
+        self.batch_size = batch_size
+        self.batch_embedding = {}
+
+    def embedding(self, input_lines, is_sorted=True):
+        input_ids, mask = self.tokenizer(input_lines)
+        n_tokens = torch.tensor([sum(seq) for seq in mask])
+        if is_sorted:
+            sort_index = torch.argsort(n_tokens, descending=True)
+
+            input_ids = input_ids[sort_index]
+            mask = mask[sort_index]
+            n_tokens = n_tokens[sort_index]
+        else:
+            sort_index = torch.arange(len(input_lines))
+        
+        n_lines = input_ids.shape[0]
+        self.n_lines = n_lines
+        device = input_ids.device
+
+        batch_embedding = {}
+
+        batch_id = 0
+        while batch_id * self.batch_size < n_lines:
+            batch_start = batch_id * self.batch_size
+            batch_end   = batch_start + self.batch_size if batch_start + self.batch_size < n_lines else n_lines
+            batch_n_lines = batch_end - batch_start
+            if is_sorted:
+                max_n_tokens = n_tokens[batch_start]
+            else:
+                max_n_tokens = torch.max(n_tokens[batch_start:batch_end])
+
+            batch_index = sort_index[batch_start:batch_end]
+            batch_input_ids = input_ids[batch_start:batch_end, :max_n_tokens]
+            batch_mask = mask[batch_start:batch_end, :max_n_tokens]
+            batch_n_tokens = n_tokens[batch_start:batch_end]
+
+            with torch.no_grad():
+                batch_inputs_embeds = self.model.embeddings.word_embeddings(batch_input_ids)
+
+                seq_length = batch_inputs_embeds.size(1)
+                batch_position_ids = torch.arange(seq_length, dtype=torch.long, device=batch_input_ids.device)
+                batch_position_ids = batch_position_ids.unsqueeze(0).expand_as(batch_input_ids)
+
+                batch_position_embeds = self.model.embeddings.position_embeddings(batch_position_ids)
+                batch_hidden_states = batch_inputs_embeds + batch_position_embeds # + batch_token_type_embeds
+                batch_hidden_states = self.model.embeddings.LayerNorm(batch_hidden_states)
+                batch_hidden_states = self.model.embeddings.dropout(batch_hidden_states)
+            
+            batch_embedding[batch_id] = {
+                'index': batch_index,
+                'hidden_states': batch_hidden_states,
+                'mask': batch_mask,
+                'n_tokens': batch_n_tokens
+            }
+            batch_id += 1
+        self.batch_embedding = batch_embedding
+        return batch_id
+
+    def forward(self, batch_id, layer_limit, verbose=0,
+                output_last_hidden_states=True,
+                output_all_hidden_states=False, output_all_activations=False, 
+                output_all_pooled_hidden_states=True, output_all_pooled_activations=True):
+        batch = self.batch_embedding[batch_id]
+        hidden_states = batch['hidden_states']
+        mask = batch['mask']
+        n_tokens = batch['n_tokens']
+        
+        batch_size, seq_length = mask.shape
+        head_mask = [None] * layer_limit
+
+        input_shape = hidden_states.size()
+        attention_mask = mask#: torch.Tensor = self.model.get_extended_attention_mask(mask, input_shape)
+
+        all_hidden_states = () if output_all_hidden_states else None
+        all_activations = () if output_all_activations else None
+        all_pooled_hidden_states = () if output_all_pooled_hidden_states else None
+        all_pooled_activations = () if output_all_pooled_activations else None
+        
+        with torch.no_grad():
+            h = hidden_states
+
+        for layer in range(layer_limit):            
+            with torch.no_grad():
+                tmp_block = self.model.transformer.layer[layer]
+
+                if output_all_hidden_states:
+                    all_hidden_states += (h,)
+                if output_all_pooled_hidden_states:
+                    first_hs = h[:,0]
+                    hs = h * mask.unsqueeze(-1)
+                    sum_masked = hs.sum(dim=1)
+                    avg_hs = sum_masked / n_tokens.unsqueeze(-1)
+                    hs = hs.masked_fill(mask.unsqueeze(-1) == 0, float('-inf'))
+                    max_hs = hs.max(dim=1)[0]
+                    pooled_hs = torch.stack([first_hs, max_hs, avg_hs], dim=-1)
+                    all_pooled_hidden_states += (pooled_hs,)
+
+                attn = tmp_block.attention
+                sa_output = attn(query=h, key=h, value=h, mask=attention_mask)
+                sa_output = tmp_block.sa_layer_norm(sa_output[0] + h)
+                
+                tmp_ffn = tmp_block.ffn
+                act = tmp_ffn.activation(tmp_ffn.lin1(sa_output))
+                ffn_output = tmp_ffn.dropout(tmp_ffn.lin2(act))
+                ffn_output: torch.Tensor = tmp_block.output_layer_norm(ffn_output + sa_output)
+                
+                h = ffn_output
+            
+                if output_all_activations:
+                    all_activation += (act,)
+                if output_all_pooled_activations:
+                    first_act = act[:,0]
+                    act = act * mask.unsqueeze(-1)
+                    sum_masked = act.sum(dim=1)
+                    avg_act = sum_masked / n_tokens.unsqueeze(-1)
+                    act = act.masked_fill(mask.unsqueeze(-1) == 0, float('-inf'))
+                    max_act = act.max(dim=1)[0]
+                    pooled_act = torch.stack([first_act, max_act, avg_act], dim=-1)
+                    all_pooled_activations += (pooled_act,)
+
+            if verbose>1:
+                print('Layer ', layer + 1, ' / ', layer_limit, ' Processed.')
+        
+        with torch.no_grad():
+            last_hidden_states = h if output_last_hidden_states else None
+
+            if output_all_hidden_states:
+                all_hidden_states += (h,)
+            if output_all_pooled_hidden_states:
+                first_hs = h[:,0]
+                hs = h * mask.unsqueeze(-1)
+                sum_masked = hs.sum(dim=1)
+                avg_hs = sum_masked / n_tokens.unsqueeze(-1)
+                hs = hs.masked_fill(mask.unsqueeze(-1) == 0, float('-inf'))
+                max_hs = hs.max(dim=1)[0]
+                pooled_hs = torch.stack([first_hs, max_hs, avg_hs], dim=-1)
+                all_pooled_hidden_states += (pooled_hs,)
+
+            if all_pooled_hidden_states is not None:
+                all_pooled_hidden_states = torch.stack(all_pooled_hidden_states)            
+            if all_pooled_activations is not None:
+                all_pooled_activations = torch.stack(all_pooled_activations)
+                
+        return (last_hidden_states, \
+            all_hidden_states, all_activations, \
+            all_pooled_hidden_states, all_pooled_activations,)
+    
+    def get_result(self, input_lines, layer_limit=6, verbose=0,
+                output_last_hidden_states=True,
+                output_all_hidden_states=False, output_all_activations=False, 
+                output_all_pooled_hidden_states=True, output_all_pooled_activations=True):
+        if layer_limit > self.n_layer:
+            print('DistilBERT layer limit ', self.n_layer)
+            return
+        n_batch = self.embedding(input_lines, is_sorted=True)
+        
+        index = ()       
+
+        last_hidden_states = () if output_last_hidden_states else None
+        all_hidden_states = () if output_all_hidden_states else None
+        all_activations = () if output_all_activations else None
+        all_pooled_hidden_states = () if output_all_pooled_hidden_states else None
+        all_pooled_activations = () if output_all_pooled_activations else None
+        
+        for batch_id in range(n_batch):
+            if verbose:
+                print('Batch ', batch_id + 1, ' / ', n_batch)
+            
+            batch = self.batch_embedding[batch_id]
+            index += tuple(batch['index'].numpy())
+            
+            batch_last_hidden_states, \
+                batch_all_hidden_states, batch_all_activations, \
+                batch_all_pooled_hidden_states, batch_all_pooled_activations = \
+                self.forward(batch_id, layer_limit, verbose,
+                    output_last_hidden_states,
+                    output_all_hidden_states, output_all_activations, 
+                    output_all_pooled_hidden_states, output_all_pooled_activations
+                )
+            
+            if output_last_hidden_states:
+                last_hidden_states += (batch_last_hidden_states,)
+            if output_all_hidden_states:
+                all_hidden_states += (batch_all_hidden_states,)
+            if output_all_activations:
+                all_activations += (batch_all_activations,)
+            if output_all_pooled_hidden_states:
+                all_pooled_hidden_states += (batch_all_pooled_hidden_states,)
+            if output_all_pooled_activations:
+                all_pooled_activations += (batch_all_pooled_activations,)
+            
+        output = (index,)
+        #index = torch.cat(index, dim=0)
+        #if output_last_hidden_states:
+        #    output += (last_hidden_states,)
+        if output_all_hidden_states:
+            output += (all_hidden_states,)
+        if output_all_activations:
+            output += (all_activations,)
+        if output_all_pooled_hidden_states:
+            output += (torch.cat(all_pooled_hidden_states, dim=1),)
+        if output_all_pooled_activations:
+            output += (torch.cat(all_pooled_activations, dim=1),)
+        
+        return output
+
 
 class Roberta(Bert):
     def __init__(self, tokenizer, model, batch_size=1000):
@@ -525,7 +734,6 @@ class GPT2:
         n_batch = self.embedding(input_lines, is_sorted=True)
         
         index = ()       
-
         last_hidden_states = () if output_last_hidden_states else None
         all_hidden_states = () if output_all_hidden_states else None
         all_activations = () if output_all_activations else None
@@ -595,7 +803,7 @@ class GPT2:
 class GPT2Base(GPT2):
     def __init__(self, tokenizer, local_model_dir=f'../model/gpt2', batch_size=1000):
         self.n_positions = 1024
-        self.n_layer = 48
+        self.n_layer = 12
         self.batch_size = batch_size
         super().__init__(tokenizer, local_model_dir, batch_size)
 

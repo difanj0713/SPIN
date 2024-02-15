@@ -122,7 +122,7 @@ def main():
         # train, val, test
         input_lines = text_train
         res = model.get_result(input_lines, layer_limit=layer_dict[args.model_name], verbose=2, \
-                    output_last_hidden_states=False,
+                    output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
         output_dir = f'../dataset_acts/{args.dataset}/train_all_{args.model_name}_res.pkl'
@@ -131,7 +131,7 @@ def main():
 
         input_lines = text_val
         res = model.get_result(input_lines, layer_limit=layer_dict[args.model_name], verbose=2, \
-                    output_last_hidden_states=False,
+                    output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
         output_dir = f'../dataset_acts/{args.dataset}/val_all_{args.model_name}_res.pkl'
@@ -140,7 +140,7 @@ def main():
 
         input_lines = text_test
         res = model.get_result(input_lines, layer_limit=layer_dict[args.model_name], verbose=2, \
-                    output_last_hidden_states=False,
+                    output_last_hidden_states=True,
                     output_all_hidden_states=False, output_all_activations=False, 
                     output_all_pooled_hidden_states=True, output_all_pooled_activations=True)
         output_dir = f'../dataset_acts/{args.dataset}/test_all_{args.model_name}_res.pkl'

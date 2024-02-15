@@ -4,9 +4,9 @@ from multiprocessing import Pool, cpu_count, Queue, Process
 from tqdm.contrib.concurrent import process_map
 
 warnings.filterwarnings("ignore")
-hs_layer_dict = {"distilbert": 7, "roberta": 13, "gpt2-xl": 50, "gpt2": 14, "gpt2-medium": 26, "gpt2-large": 38}
-act_layer_dict = {"distilbert": 6, "roberta": 12, "gpt2-xl": 48, "gpt2": 12, "gpt2-medium": 24, "gpt2-large": 36}
-pooling_dict = {0: "first_token", 1: "max_pooling", 2: "avg_pooling"}
+hs_layer_dict = {"distilbert": 7, "roberta": 13, "gpt2-xl": 50, "gpt2": 13, "gpt2-medium": 26, "gpt2-large": 38, "flan-t5-small":20, "flan-t5-base":28, "flan-t5-large":52, "flan-t5-xl":52}
+act_layer_dict = {"distilbert": 6, "roberta": 12, "gpt2-xl": 48, "gpt2": 12, "gpt2-medium": 24, "gpt2-large": 36, "flan-t5-small":16, "flan-t5-base":24, "flan-t5-large":48, "flan-t5-xl":48}
+pooling_dict = {0: "first_token", 1:"last_token", 2: "max_pooling", 3: "avg_pooling"}
 f1_score_macro = partial(f1_score, average='macro')
 metrics_dict = {"imdb": accuracy_score, "edos": f1_score_macro, "sst-2": accuracy_score}
 
@@ -112,8 +112,8 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
         test_pkl = f'../dataset_acts/{dataset}/test_all_{model_name}_res.pkl'
         val_pkl = f'../dataset_acts/{dataset}/val_all_{model_name}_res.pkl'
         record_dir = f'../dataset_acts/{dataset}/{model_name}_trained_lr.pkl'
-        clf_dict_dir = f'../dataset_acts/{dataset}/new_agg/{model_name}_lr_agg_neurons_clf.pkl'
-        cumul_dict_dir = f'../dataset_acts/{dataset}/new_agg/{model_name}_lr_agg_neurons.pkl'
+        clf_dict_dir = f'../dataset_acts/{dataset}/new_agg/{model_name}_lr_agg_neurons_clf_extra.pkl'
+        cumul_dict_dir = f'../dataset_acts/{dataset}/new_agg/{model_name}_lr_agg_neurons_extra.pkl'
     
     with open(train_pkl, 'rb') as f:
         train_res = pickle.load(f)
@@ -139,17 +139,18 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
     # aggregated_X_train = torch.empty(0)
     # aggregated_X_val = torch.empty(0)
     # aggregated_X_test = torch.empty(0)
-    default_C_values = [0.2, 0.5, 1, 5, 10, 100]
+    default_C_values = [0.2, 1, 10]
     
     configs = []
-    for pooling_choice in range(3):
+    for pooling_choice in range(1, 3, 1):
         for threshold in eta_list:
-            for top_k in range(hs_layer_dict[model_name]):
+            #range(hs_layer_dict[model_name]):#range(act_layer_dict[model_name]):#
+            for top_k in range(hs_layer_dict[model_name]):#-24, hs_layer_dict[model_name], 1):
                 configs.append((pooling_choice, threshold, top_k, 'hs'))
-            for top_k in range(act_layer_dict[model_name]):
+            for top_k in range(act_layer_dict[model_name]):#-24, act_layer_dict[model_name], 1):
                 configs.append((pooling_choice, threshold, top_k, 'act'))
     
-    results = process_map(agg_run, [(pooling_choice, threshold, top_k, hs_or_act, model_name, record, train_res, val_res, test_res, dataset, default_C_values, iter_interval, max_iter_increment, cumul_dict, clf_dict, y_train_full, y_val_full, y_test_full) for pooling_choice, threshold, top_k, hs_or_act in configs], max_workers=32, chunksize=1)
+    results = process_map(agg_run, [(pooling_choice, threshold, top_k, hs_or_act, model_name, record, train_res, val_res, test_res, dataset, default_C_values, iter_interval, max_iter_increment, cumul_dict, clf_dict, y_train_full, y_val_full, y_test_full) for pooling_choice, threshold, top_k, hs_or_act in configs], max_workers=72, chunksize=1)
     for clf_ret, cumul_ret in results:
         clf_dict.update(clf_ret)
         cumul_dict.update(cumul_ret)
@@ -180,9 +181,9 @@ def main() -> None:
                         help='Flag for finetuned models. Options: 1 for finetuned, 0 for frozen')
     args = parser.parse_args()
 
-    #eta_list = [0.01]
-    eta_list = [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1] # hyperparam as how many cumsum weights to be selected per layer.
-    layer_agg(args.model_name, args.is_finetuned, args.dataset, eta_list, iter_interval=4, max_iter_increment=16)
+    #eta_list = [0.3, 0.5, 0.8, 1]
+    eta_list = [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8] # hyperparam as how many cumsum weights to be selected per layer.
+    layer_agg(args.model_name, args.is_finetuned, args.dataset, eta_list, iter_interval=2, max_iter_increment=32)
 
 if __name__ == "__main__":
     main()

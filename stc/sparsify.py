@@ -6,9 +6,9 @@ import itertools
 import pdb
 
 warnings.filterwarnings("ignore")
-hs_layer_dict = {"distilbert": 7, "roberta": 13, "gpt2-xl": 50, "gpt2": 13, "gpt2-medium": 26, "gpt2-large": 38}
-act_layer_dict = {"distilbert": 6, "roberta": 12, "gpt2-xl": 48, "gpt2": 12, "gpt2-medium": 24, "gpt2-large": 36}
-pooling_dict = {0: "first_token", 1: "max_pooling", 2: "avg_pooling"}
+hs_layer_dict = {"distilbert": 7, "roberta": 13, "gpt2-xl": 50, "gpt2": 13, "gpt2-medium": 26, "gpt2-large": 38, "flan-t5-small":20, "flan-t5-base":28, "flan-t5-large":52, "flan-t5-xl":52}
+act_layer_dict = {"distilbert": 6, "roberta": 12, "gpt2-xl": 48, "gpt2": 12, "gpt2-medium": 24, "gpt2-large": 36, "flan-t5-small":16, "flan-t5-base":24, "flan-t5-large":48, "flan-t5-xl": 48}
+pooling_dict = {0: "first_token", 1:"last_token",  2: "max_pooling", 3: "avg_pooling"}
 f1_score_macro = partial(f1_score, average='macro')
 metrics_dict = {"imdb": accuracy_score, "edos": f1_score_macro, "sst-2": accuracy_score}
 
@@ -60,9 +60,10 @@ def linear_probe(model_name, is_finetuned, dataset, iter_interval=2, max_iter_in
     val_acc_hs = defaultdict(float)
     val_acc_act = defaultdict(float)
     clf_dict = defaultdict()
-    default_C_values = [0.2, 1, 10, 100] # for L1-regularization
+    default_C_values = [0.2] # for L1-regularization
     layer_range = range(hs_layer_dict[model_name])
     pooling_choices_range = range(pooling_choices)
+    #pooling_choices_range = [3, 4]
     combinations = list(itertools.product(layer_range, pooling_choices_range, default_C_values))
     all_clf_dict = defaultdict()
 
@@ -70,7 +71,7 @@ def linear_probe(model_name, is_finetuned, dataset, iter_interval=2, max_iter_in
     rep = "hs"
     best_val_acc_per_layer = {}
     best_clf_per_layer = {}
-    with ProcessPoolExecutor(max_workers=32) as executor:
+    with ProcessPoolExecutor(max_workers=72) as executor:
         futures = [executor.submit(linear_probe_worker, dataset, layer, pooling_choice, C, y_train_full, y_val_full, train_res, val_res, rep, iter_interval, max_iter_increment) for layer, pooling_choice, C in combinations]
         #results = [future.result() for future in futures]
         for future in concurrent.futures.as_completed(futures):
@@ -114,7 +115,7 @@ def linear_probe(model_name, is_finetuned, dataset, iter_interval=2, max_iter_in
 
     #pdb.set_trace()
     with open(clf_output_dir, 'wb') as f:
-        pickle.dump(clf_dict, f)
+        pickle.dump(all_clf_dict, f)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description='Initialize analysis for specified model and dataset.')
@@ -125,7 +126,7 @@ def main() -> None:
     parser.add_argument('--is_finetuned', type=int, required=True,
                         help='Flag for finetuned models. Options: 1 for finetuned, 0 for frozen')
     args = parser.parse_args()
-    linear_probe(args.model_name, args.is_finetuned, args.dataset, iter_interval=2, max_iter_increment=16)
+    linear_probe(args.model_name, args.is_finetuned, args.dataset, iter_interval=4, max_iter_increment=16)
 
 if __name__ == "__main__":
     main()
