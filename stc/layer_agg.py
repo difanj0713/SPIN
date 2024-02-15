@@ -139,10 +139,10 @@ def layer_agg(model_name, is_finetuned, dataset, eta_list, iter_interval=2, max_
     # aggregated_X_train = torch.empty(0)
     # aggregated_X_val = torch.empty(0)
     # aggregated_X_test = torch.empty(0)
-    default_C_values = [0.2, 1, 10]
+    default_C_values = [0.1, 0.2, 1, 10, 100]
     
     configs = []
-    for pooling_choice in range(1, 3, 1):
+    for pooling_choice in range(0, 3, 1):
         for threshold in eta_list:
             #range(hs_layer_dict[model_name]):#range(act_layer_dict[model_name]):#
             for top_k in range(hs_layer_dict[model_name]):#-24, hs_layer_dict[model_name], 1):
