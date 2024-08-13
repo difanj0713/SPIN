@@ -8,7 +8,7 @@
 
 Official code repository for our paper [***SPIN*** **: Sparsifying and Integrating Internal Neurons in Large Language Models for Text Classification**](https://aclanthology.org/2024.findings-acl.277/) by Difan Jiao, Yilun Liu, Zhenwei Tang, Daniel Matter, Jürgen Pfeffer and Ashton Anderson.
 
-To visually explore how *SPIN* works, pleaase visit our [interactive visualization web demo]([https://github.com/difanj0713/SPIN/](https://liuyilun2000.github.io/spin-visualization/)).
+To visually explore how *SPIN* works, pleaase visit our [interactive visualization web demo](https://liuyilun2000.github.io/spin-visualization/).
 
 ### Citation
 We would be delighted if our provided resources has been useful in your research or development! 🥰 If so, please consider citing our paper:
